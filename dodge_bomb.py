@@ -2,6 +2,7 @@ import os
 import random
 import sys
 import time
+import math
 import pygame as pg
 
 WIDTH, HEIGHT = 1100, 650
@@ -35,7 +36,6 @@ def get_kk_img(sum_mv: tuple[int, int], base_img: pg.Surface) -> pg.Surface:
     }
     return kk_imgs.get(tuple(sum_mv), base_img)
 
-
 def make_accel_bombs():
     bb_accs = [a for a in range(1, 11)]
     bb_imgs = []
@@ -45,6 +45,39 @@ def make_accel_bombs():
         bb_img.set_colorkey((0, 0, 0))
         bb_imgs.append(bb_img)
     return bb_imgs, bb_accs
+
+def calc_orientation(org: pg.Rect, dst: pg.Rect, prev_vx: int, prev_vy: int) -> tuple[int, int]:
+    """
+    爆弾から見て、こうかとんRectがある方向をベクトルとして求める関数
+    Args:
+        org: 爆弾のRect
+        dst: こうかとんのRect  
+        prev_vx: 前回のx方向速度
+        prev_vy: 前回のy方向速度
+    Returns:
+        正規化された速度ベクトル（タプル）
+    """
+    # 差ベクトルを計算（こうかとん - 爆弾）
+    diff_x = dst.centerx - org.centerx
+    diff_y = dst.centery - org.centery
+    
+    # 差ベクトルのノルム（距離）を計算
+    distance = math.sqrt(diff_x**2 + diff_y**2)
+    
+    # 距離が300未満の場合は慣性で前の方向に移動
+    if distance < 300:
+        return prev_vx, prev_vy
+    
+    # 差ベクトルのノルムが√50になるように正規化
+    if distance == 0:  # ゼロ除算回避
+        return 0, 0
+    
+    target_norm = math.sqrt(50)  # ≈ 7.07
+    normalized_x = (diff_x / distance) * target_norm
+    normalized_y = (diff_y / distance) * target_norm
+    
+    # move_ipは整数しか受け付けないので四捨五入
+    return round(normalized_x), round(normalized_y)
 
 def show_game_over(screen, kk_dead_img):
     blackout = pg.Surface((WIDTH, HEIGHT))
@@ -81,7 +114,7 @@ def main():
     bb_rct = bb_img.get_rect()
     bb_rct.centerx = random.randint(0, WIDTH)
     bb_rct.centery = random.randint(0, HEIGHT)
-    vx, vy = +5, +5
+    vx, vy = +5, +5  # 初期速度
     clock = pg.time.Clock()
     tmr = 0
 
@@ -110,11 +143,20 @@ def main():
 
         screen.blit(kk_img, kk_rct)
 
+        # 追尾型爆弾の処理
         idx = min(tmr // 500, 9)
+        
+        # 追尾方向を計算
+        vx, vy = calc_orientation(bb_rct, kk_rct, vx, vy)
+        
+        # 加速度を適用
         avx = vx * bb_accs[idx]
         avy = vy * bb_accs[idx]
+        
         bb_img = bb_imgs[idx]
         bb_rct.move_ip(avx, avy)
+        
+        # 画面境界でのバウンド処理
         yoko, tate = check_bound(bb_rct)
         if not yoko:
             vx *= -1
