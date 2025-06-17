@@ -80,23 +80,32 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect, prev_vx: int, prev_vy: int) -> 
     return round(normalized_x), round(normalized_y)
 
 def show_game_over(screen, kk_dead_img):
+    # 画面全体を覆う半透明の黒いサーフェスを作成（ブラックアウト用）
     blackout = pg.Surface((WIDTH, HEIGHT))
-    blackout.set_alpha(128)
-    blackout.fill((0, 0, 0))
+    blackout.set_alpha(128)  # 半透明（0:完全透明, 255:不透明）
+    blackout.fill((0, 0, 0))  # 黒く塗りつぶす
 
+    # 「Game Over」用のフォントとテキストの作成
     font = pg.font.SysFont(None, 80)
-    text = font.render("Game Over", True, (255, 255, 255))
-    text_rect = text.get_rect(center=(WIDTH//2, HEIGHT//2))
+    text = font.render("Game Over", True, (255, 255, 255))  # 白文字
+    text_rect = text.get_rect(center=(WIDTH//2, HEIGHT//2))  # 中央に配置
 
+    # 泣いているこうかとん画像を少し縮小
     kk_img = pg.transform.rotozoom(kk_dead_img, 0, 0.8)
+    # テキストの左右にこうかとん画像を配置
     left_rect = kk_img.get_rect(center=(text_rect.left - 80, HEIGHT//2))
     right_rect = kk_img.get_rect(center=(text_rect.right + 80, HEIGHT//2))
 
+    # 画面に順番に描画（ブラックアウト → 左右こうかとん → テキスト）
     screen.blit(blackout, (0, 0))
     screen.blit(kk_img, left_rect)
     screen.blit(kk_img, right_rect)
     screen.blit(text, text_rect)
+
+    # 表示を更新して反映
     pg.display.update()
+
+    # 5秒間停止して表示を持続
     time.sleep(5)
 
 def main():
