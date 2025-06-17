@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 import pygame as pg
 
 
@@ -20,6 +21,10 @@ def main():
     kk_img = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
+    bb_img = pg.surface((20, 20))
+    pg.drow.circle(bb_img,(255, 0, 0,), (10, 10), 10)
+    bb_rct = bb_img.get_rect()
+    bb_rct.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -33,7 +38,7 @@ def main():
         for key, mv in DELTA.items():
             if key_lst[key]:
                 sum_mv[0] += mv[0]
-                sum_mv[0] += mv[0]
+                sum_mv[1] += mv[1]
 
         # if key_lst[pg.K_UP]:
         #     sum_mv[1] -= 5
@@ -45,6 +50,7 @@ def main():
         #     sum_mv[0] += 5
         kk_rct.move_ip(sum_mv)
         screen.blit(kk_img, kk_rct)
+        screen.blit(kk_img, bb_rct)
         pg.display.update()
         tmr += 1
         clock.tick(50)
